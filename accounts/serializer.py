@@ -21,11 +21,9 @@ class SignUpSerializer(serializers.ModelSerializer):
         user = super(SignUpSerializer, self).create(validated_data)
         if user.auth_type == VIA_EMAIL:
             code = user.generate_code(VIA_EMAIL)
-            #send_mail(user.email, code)
             print(f'---------------EMAIL CODE: {code} ------------------------')
         elif user.auth_type == VIA_PHONE:
             code = user.generate_code(VIA_PHONE)
-            #send_phone_number(user.phone_number, code)
             print(f'---------------SMS CODE: {code} ------------------------')
         else:
             raise ValidationError(
