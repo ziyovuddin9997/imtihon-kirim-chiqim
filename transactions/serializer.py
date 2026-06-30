@@ -6,7 +6,7 @@ from .models import Transaction
 class TransactionSerializer(serializers.ModelSerializer):
     transaction_type = serializers.ChoiceField(
         choices=Transaction.TransactionType.choices,
-        help_text="Type of transaction: 'income' or 'expense'"
+        help_text="Tranzaksiya turi: 'kirim' yoki 'chiqim'"
     )
 
     class Meta:
@@ -27,34 +27,42 @@ class TransactionSerializer(serializers.ModelSerializer):
     def validate_amount(self, value):
         if value <= Decimal('0.00'):
             raise serializers.ValidationError(
-                "Amount must be greater than 0."
+                "Summa 0 dan katta bo'lishi kerak."
             )
+
         if value > Decimal('999999999999.99'):
             raise serializers.ValidationError(
-                "Amount is too large."
+                "Summa juda katta."
             )
+
         return value
 
     def validate_transaction_type(self, value):
-        valid_choices = [choice[0] for choice in Transaction.TransactionType.choices]
+        valid_choices = [
+            choice[0] for choice in Transaction.TransactionType.choices
+        ]
+
         if value not in valid_choices:
             raise serializers.ValidationError(
-                f"Invalid transaction type. Must be one of: {', '.join(valid_choices)}"
+                f"Noto'g'ri tranzaksiya turi. Quyidagilardan biri bo'lishi kerak: {', '.join(valid_choices)}"
             )
+
         return value
 
     def validate_title(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError(
-                "Title cannot be empty."
+                "Sarlavha bo'sh bo'lishi mumkin emas."
             )
+
         return value.strip()
 
     def validate_category(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError(
-                "Category cannot be empty."
+                "Kategoriya bo'sh bo'lishi mumkin emas."
             )
+
         return value.strip()
 
     def to_representation(self, instance):
