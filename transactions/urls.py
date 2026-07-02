@@ -1,18 +1,49 @@
 from django.urls import path, include
-from rest_framework.routers import SimpleRouter
-from .views import TransactionViewSet
+from rest_framework.routers import DefaultRouter
 
 
-router = SimpleRouter()
-router.register(
-    r'transactions',
-    TransactionViewSet,
-    basename='transaction'
+from .views import (
+    CurrencyViewSet,
+    FinanceAccountViewSet,
+    CategoryViewSet,
+    TransactionViewSet
 )
 
 
-app_name = 'transactions'
+router = DefaultRouter()
+
+
+router.register(
+    "currencies",
+    CurrencyViewSet
+)
+
+
+router.register(
+    "accounts",
+    FinanceAccountViewSet,
+    basename="accounts"
+)
+
+
+router.register(
+    "categories",
+    CategoryViewSet,
+    basename="categories"
+)
+
+
+router.register(
+    "transactions",
+    TransactionViewSet,
+    basename="transactions"
+)
+
+
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path(
+        "",
+        include(router.urls)
+    )
 ]

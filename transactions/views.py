@@ -1,115 +1,103 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Sum, Q
-from decimal import Decimal
+from django.db.models import Sum
 
-from .models import Transaction
-from .serializer import TransactionSerializer
+
+from .models import (
+    Currency,
+    FinanceAccount,
+    Category,
+    Transaction
+)
+
+from .serializer import (
+    CurrencySerializer,
+    FinanceAccountSerializer,
+    CategorySerializer,
+    TransactionSerializer
+)
+
 from .filters import TransactionFilter
 
 
-class TransactionViewSet(viewsets.ModelViewSet):
-    queryset = Transaction.objects.all()
-    serializer_class = TransactionSerializer
-    filterset_class = TransactionFilter
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+# =========================
+# CURRENCY
+# =========================
+class CurrencyViewSet(viewsets.ModelViewSet):
 
-    search_fields = ['title', 'category', 'description']
+    queryset = Currency.objects.all()
+    serializer_class = CurrencySerializer
+    permission_classes = [IsAuthenticated]
 
-    ordering_fields = ['created_at', 'amount', 'date', 'title']
-    ordering = ['-created_at'] 
+
+# =========================
+# FINANCE ACCOUNT
+# =========================
+class FinanceAccountViewSet(viewsets.ModelViewSet):
+
+    serializer_class = FinanceAccountSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
-        transaction_type = self.request.query_params.get('transaction_type')
-        if transaction_type:
-            queryset = queryset.filter(transaction_type=transaction_type)
-
-        return queryset
+        return FinanceAccount.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        
-        serializer.save()
-
-    def perform_update(self, serializer):
- 
-        serializer.save()
-
-    @action(detail=False, methods=['get'], url_path='statistics')
-    def statistics(self, request):
-
-        queryset = self.get_queryset()
+        serializer.save(user=self.request.user)
 
 
-        income_total = queryset.filter(
-            transaction_type=Transaction.TransactionType.INCOME
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+# =========================
+# CATEGORY
+# =========================
+class CategoryViewSet(viewsets.ModelViewSet):
 
-        expense_total = queryset.filter(
-            transaction_type=Transaction.TransactionType.EXPENSE
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]
 
-        balance = income_total - expense_total
+    def get_queryset(self):
+        return Category.objects.filter(user=self.request.user)
 
-        statistics = {
-            'total_income': float(income_total),
-            'total_expense': float(expense_total),
-            'balance': float(balance),
-            'count_income': queryset.filter(
-                transaction_type=Transaction.TransactionType.INCOME
-            ).count(),
-            'count_expense': queryset.filter(
-                transaction_type=Transaction.TransactionType.EXPENSE
-            ).count(),
-        }
-
-        return Response(statistics, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=['get'], url_path='summary')
-    def summary(self, request):
-        queryset = self.get_queryset()
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
-        income_total = queryset.filter(
-            transaction_type=Transaction.TransactionType.INCOME
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+# =========================
+# TRANSACTION
+# =========================
+class TransactionViewSet(viewsets.ModelViewSet):
 
-        expense_total = queryset.filter(
-            transaction_type=Transaction.TransactionType.EXPENSE
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated]
 
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TransactionFilter
 
-        category_breakdown = []
-        for category in queryset.values_list('category', flat=True).distinct():
-            category_income = queryset.filter(
-                category=category,
-                transaction_type=Transaction.TransactionType.INCOME
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    def get_queryset(self):
+        return Transaction.objects.filter(user=self.request.user)
 
-            category_expense = queryset.filter(
-                category=category,
-                transaction_type=Transaction.TransactionType.EXPENSE
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
-            category_breakdown.append({
-                'category': category,
-                'income': float(category_income),
-                'expense': float(category_expense),
-                'balance': float(category_income - category_expense),
-            })
+    # =========================
+    # STATS ENDPOINT
+    # =========================
+    @action(detail=False, methods=["get"])
+    def stats(self, request):
 
-        summary = {
-            'overall': {
-                'total_income': float(income_total),
-                'total_expense': float(expense_total),
-                'balance': float(income_total - expense_total),
-                'total_transactions': queryset.count(),
-            },
-            'by_category': category_breakdown,
-        }
+        qs = self.get_queryset()
 
-        return Response(summary, status=status.HTTP_200_OK)
+        income = qs.filter(
+            transaction_type="income"
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        expense = qs.filter(
+            transaction_type="expense"
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        return Response({
+            "income": income,
+            "expense": expense,
+            "balance": income - expense
+        })
