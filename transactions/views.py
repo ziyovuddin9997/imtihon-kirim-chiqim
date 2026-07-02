@@ -23,9 +23,6 @@ from .serializer import (
 from .filters import TransactionFilter
 
 
-# =========================
-# CURRENCY
-# =========================
 class CurrencyViewSet(viewsets.ModelViewSet):
 
     queryset = Currency.objects.all()
@@ -33,9 +30,6 @@ class CurrencyViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
-# =========================
-# FINANCE ACCOUNT
-# =========================
 class FinanceAccountViewSet(viewsets.ModelViewSet):
 
     serializer_class = FinanceAccountSerializer
@@ -48,9 +42,6 @@ class FinanceAccountViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-# =========================
-# CATEGORY
-# =========================
 class CategoryViewSet(viewsets.ModelViewSet):
 
     serializer_class = CategorySerializer
@@ -63,9 +54,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-# =========================
-# TRANSACTION
-# =========================
 class TransactionViewSet(viewsets.ModelViewSet):
 
     serializer_class = TransactionSerializer
@@ -80,9 +68,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    # =========================
-    # STATS ENDPOINT
-    # =========================
+    
     @action(detail=False, methods=["get"])
     def stats(self, request):
 

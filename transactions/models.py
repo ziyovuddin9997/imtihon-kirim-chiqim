@@ -4,9 +4,6 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-# =========================
-# 1. Currency
-# =========================
 class Currency(models.Model):
     name = models.CharField(max_length=100, blank=True, null=True)
     code = models.CharField(max_length=3, unique=True)
@@ -15,9 +12,6 @@ class Currency(models.Model):
         return self.code
 
 
-# =========================
-# 2. Finance Account
-# =========================
 class FinanceAccount(models.Model):
 
     PAYMENT_TYPES = (
@@ -46,9 +40,6 @@ class FinanceAccount(models.Model):
         return self.name
 
 
-# =========================
-# 3. Category
-# =========================
 class Category(models.Model):
 
     CATEGORY_TYPES = (
@@ -73,9 +64,6 @@ class Category(models.Model):
         return self.name
 
 
-# =========================
-# 4. Transaction
-# =========================
 class Transaction(models.Model):
 
     TRANSACTION_TYPES = (
